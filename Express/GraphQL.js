@@ -1,9 +1,10 @@
+// Required modules
 const express = require('express');
 const { graphqlHTTP } = require('express-graphql');
 const { buildSchema } = require('graphql');
 const mongoose = require('mongoose');
 
-// Define MongoDB schemas
+// MongoDB schemas
 const authorSchema = new mongoose.Schema({
     name: String
 });
@@ -16,7 +17,7 @@ const bookSchema = new mongoose.Schema({
 const Author = mongoose.model('Author', authorSchema);
 const Book = mongoose.model('Book', bookSchema);
 
-// Define GraphQL schema
+// GraphQL schema
 const schema = buildSchema(`
     type Book {
         id: ID
@@ -45,42 +46,50 @@ const schema = buildSchema(`
     }
 `);
 
-// Define resolvers
+// GraphQL resolvers
 const root = {
-    books: async () => await Book.find(),
-    authors: async () => await Author.find(),
+    books: async () => await Book.find().populate('author'),
+    authors: async () => {
+        const authors = await Author.find();
+        const authorsWithBooks = [];
 
+        for (const author of authors) {
+            const books = await Book.find({ author: author._id });
+            authorsWithBooks.push({
+                id: author._id,
+                name: author.name,
+                books: books
+            });
+        }
+
+        return authorsWithBooks;
+    },
     createAuthor: async ({ name }) => {
         const author = new Author({ name });
         await author.save();
         return author;
     },
-
     updateAuthor: async ({ authorId, name }) => {
         const author = await Author.findByIdAndUpdate(authorId, { name }, { new: true });
         if (!author) throw new Error('Author not found');
         return author;
     },
-
     deleteAuthor: async ({ authorId }) => {
         const author = await Author.findByIdAndDelete(authorId);
         if (!author) throw new Error('Author not found');
         await Book.deleteMany({ author: authorId });
         return authorId;
     },
-
     createBook: async ({ title, authorId }) => {
         const book = new Book({ title, author: authorId });
         await book.save();
         return book;
     },
-
     updateBook: async ({ bookId, title }) => {
         const book = await Book.findByIdAndUpdate(bookId, { title }, { new: true });
         if (!book) throw new Error('Book not found');
         return book;
     },
-
     deleteBook: async ({ bookId }) => {
         const book = await Book.findByIdAndDelete(bookId);
         if (!book) throw new Error('Book not found');
