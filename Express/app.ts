@@ -2,7 +2,7 @@
 // npx tsc --init
 //uncomment "outDir": "../dist" in tsconfig.json,
 //add to package.json
-// "dev": "nodemon --watch src/**/*.ts --exec ts-node src/app.ts", 
+//"dev": "nodemon --watch src/**/*.ts --exec ts-node src/app.ts", 
 //"builsts": "tsc",
 //"start": "node dist/app.js" 
 
